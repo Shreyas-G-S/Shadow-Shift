@@ -9,8 +9,13 @@ import random
 from dataclasses import dataclass
 from typing import Tuple, List, Sequence
 
-from config import PREDATOR_VISION_RANGE, PREDATOR_SHADOW_VISION_RANGE
+from config import (
+    PREDATOR_VISION_RANGE,
+    PREDATOR_SHADOW_VISION_RANGE,
+    PREDATOR_BFS_MAX_EXPANSIONS,
+)
 from grid import Grid
+from pathfinding import bfs_first_step_toward
 
 
 @dataclass
@@ -75,7 +80,21 @@ class Agent:
             self.step_random(grid, occupied)
             return
 
-        moves = self.possible_moves(grid, occupied)
+        # Player tile is a valid capture move; exclude only player from occupancy for pathing
+        occ_no_player = [p for p in occupied if p != (px, py)]
+        blocked = set(occ_no_player)
+        nxt = bfs_first_step_toward(
+            self.position,
+            (px, py),
+            grid,
+            blocked,
+            PREDATOR_BFS_MAX_EXPANSIONS,
+        )
+        if nxt is not None:
+            self.col, self.row = nxt
+            return
+
+        moves = self.possible_moves(grid, occ_no_player)
         if not moves:
             return
         best = min(moves, key=lambda p: abs(p[0] - px) + abs(p[1] - py))
@@ -117,3 +136,49 @@ def is_player_caught(agents: Sequence[Agent], player: Player) -> bool:
         agent.kind == "predator" and agent.position == player.position
         for agent in agents
     )
+
+
+def auto_move_player(
+    player: Player,
+    grid: Grid,
+    agents: Sequence[Agent],
+) -> None:
+    """
+    Player policy (autonomous):
+    - Prefer moves that maximize distance from the nearest predator.
+    - Prefer shadow tiles for stealth.
+    - Small bonus for stepping on a switch to manipulate shadows.
+    """
+    predator_positions = [a.position for a in agents if a.kind == "predator"]
+    occupied = {a.position for a in agents}
+
+    # Candidate moves: four directions + staying still
+    candidates = [(player.col, player.row)]
+    for dc, dr in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+        nc, nr = player.col + dc, player.row + dr
+        if grid.is_walkable(nc, nr) and (nc, nr) not in occupied:
+            candidates.append((nc, nr))
+
+    def score(cell: Tuple[int, int]) -> float:
+        c, r = cell
+        if predator_positions:
+            nearest_predator = min(abs(c - pc) + abs(r - pr) for pc, pr in predator_positions)
+        else:
+            nearest_predator = 10
+
+        s = float(nearest_predator)
+        if grid.is_shadow(c, r):
+            s += 1.5
+        if grid.is_switch(c, r):
+            s += 0.8
+        if cell == player.position:
+            s -= 0.2
+        return s
+
+    best_score = max(score(cell) for cell in candidates)
+    best_moves = [cell for cell in candidates if score(cell) == best_score]
+    chosen = random.choice(best_moves)
+    player.col, player.row = chosen
+
+    if grid.is_switch(*player.position):
+        grid.toggle_shadows()

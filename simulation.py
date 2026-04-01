@@ -3,13 +3,26 @@ Shadow Shift – simulation loop: input, update order, win/lose, rendering.
 Ties together grid (environment) and agents; implements Performance (survival time).
 """
 import sys
-from typing import List
+from typing import List, Tuple
 
 import pygame
 
 import config
 from grid import Grid
-from agents import Player, Agent, update_agents, is_player_caught
+from agents import Player, Agent, update_agents, is_player_caught, auto_move_player
+
+
+def create_world() -> Tuple[Grid, Player, List[Agent]]:
+    """Fresh maze, player, and agents (used on startup and restart)."""
+    grid = Grid.simple_maze(config.GRID_COLS, config.GRID_ROWS)
+    player = Player(col=1, row=1)
+    agents: List[Agent] = [
+        Agent(config.GRID_COLS - 2, 1, config.COLOR_PREDATOR, "predator"),
+        Agent(config.GRID_COLS - 2, config.GRID_ROWS - 2, config.COLOR_PREDATOR, "predator"),
+        Agent(config.GRID_COLS // 2, config.GRID_ROWS // 2, config.COLOR_NEUTRAL, "neutral"),
+        Agent(2, config.GRID_ROWS - 2, config.COLOR_NEUTRAL, "neutral"),
+    ]
+    return grid, player, agents
 
 
 def draw_grid(surface: pygame.Surface, grid: Grid) -> None:
@@ -83,10 +96,8 @@ def draw_agents(surface: pygame.Surface, agents: List[Agent]) -> None:
         )
 
 
-def handle_keydown(
-    event: pygame.event.Event, player: Player, grid: Grid
-) -> None:
-    """One key press → one tile move; stepping on a switch toggles shadows."""
+def handle_keydown(event: pygame.event.Event, player: Player, grid: Grid) -> None:
+    """Manual mode: one key press moves one tile; switches toggle shadows."""
     dx, dy = 0, 0
     if event.key in (pygame.K_UP, pygame.K_w):
         dy = -1
@@ -103,26 +114,21 @@ def handle_keydown(
 
 
 def run() -> None:
-    """Main loop: init, create world, run until win/lose/quit."""
+    """Main loop: init, create world, run until win/lose/quit; R restarts, Q quits."""
     pygame.init()
     pygame.display.set_caption("Shadow Shift")
     screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_HEIGHT))
     clock = pygame.time.Clock()
     font = pygame.font.Font(None, 36)
+    font_small = pygame.font.Font(None, 24)
 
-    grid = Grid.simple_maze(config.GRID_COLS, config.GRID_ROWS)
-    player = Player(col=1, row=1)
-    agents: List[Agent] = [
-        Agent(config.GRID_COLS - 2, 1, config.COLOR_PREDATOR, "predator"),
-        Agent(config.GRID_COLS - 2, config.GRID_ROWS - 2, config.COLOR_PREDATOR, "predator"),
-        Agent(config.GRID_COLS // 2, config.GRID_ROWS // 2, config.COLOR_NEUTRAL, "neutral"),
-        Agent(2, config.GRID_ROWS - 2, config.COLOR_NEUTRAL, "neutral"),
-    ]
-
+    grid, player, agents = create_world()
     survival_start_ms = pygame.time.get_ticks()
     running = True
     won = False
     lost = False
+    step_accumulator_ms = 0
+    final_survival_sec = 0.0
 
     while running:
         dt_ms = clock.tick(config.FPS)
@@ -131,15 +137,34 @@ def run() -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN and not won and not lost:
-                handle_keydown(event, player, grid)
+            elif event.type == pygame.KEYDOWN:
+                if won or lost:
+                    if event.key in (pygame.K_r, pygame.K_RETURN):
+                        grid, player, agents = create_world()
+                        survival_start_ms = pygame.time.get_ticks()
+                        won = False
+                        lost = False
+                        step_accumulator_ms = 0
+                        final_survival_sec = 0.0
+                    elif event.key in (pygame.K_q, pygame.K_ESCAPE):
+                        running = False
+                elif not config.AUTO_PLAYER:
+                    handle_keydown(event, player, grid)
 
         if not won and not lost:
-            update_agents(agents, player, grid)
-            if is_player_caught(agents, player):
-                lost = True
-            elif elapsed_sec >= config.SURVIVE_SECONDS:
-                won = True
+            step_accumulator_ms += dt_ms
+            while step_accumulator_ms >= config.STEP_INTERVAL_MS and not won and not lost:
+                step_accumulator_ms -= config.STEP_INTERVAL_MS
+                if config.AUTO_PLAYER:
+                    auto_move_player(player, grid, agents)
+                update_agents(agents, player, grid)
+                sim_elapsed = (pygame.time.get_ticks() - survival_start_ms) / 1000.0
+                if is_player_caught(agents, player):
+                    lost = True
+                    final_survival_sec = sim_elapsed
+                elif sim_elapsed >= config.SURVIVE_SECONDS:
+                    won = True
+                    final_survival_sec = sim_elapsed
 
         screen.fill(config.COLOR_BG)
         draw_grid(screen, grid)
@@ -147,14 +172,30 @@ def run() -> None:
         draw_agents(screen, agents)
 
         # HUD: survival time (Performance metric)
-        time_text = font.render(f"Survive: {max(0, config.SURVIVE_SECONDS - int(elapsed_sec))}s", True, config.COLOR_TEXT)
+        if not won and not lost:
+            remain = max(0, config.SURVIVE_SECONDS - int(elapsed_sec))
+            time_text = font.render(f"Survive: {remain}s", True, config.COLOR_TEXT)
+        else:
+            time_text = font.render(f"Time: {final_survival_sec:.1f}s", True, config.COLOR_TEXT)
         screen.blit(time_text, (config.GRID_OFFSET_X, config.GRID_OFFSET_Y - 28))
+
+        hint = font_small.render(
+            "R restart  Q quit" + ("" if config.AUTO_PLAYER else "  arrows/WASD move"),
+            True,
+            config.COLOR_TEXT,
+        )
+        screen.blit(hint, (config.GRID_OFFSET_X, config.WINDOW_HEIGHT - 28))
+
         if won:
             msg = font.render("You survived! (Win)", True, (100, 255, 100))
-            screen.blit(msg, (config.WINDOW_WIDTH // 2 - 100, config.WINDOW_HEIGHT // 2 - 20))
+            screen.blit(msg, (config.WINDOW_WIDTH // 2 - 140, config.WINDOW_HEIGHT // 2 - 40))
+            h2 = font_small.render("Press R to play again", True, config.COLOR_TEXT)
+            screen.blit(h2, (config.WINDOW_WIDTH // 2 - 110, config.WINDOW_HEIGHT // 2 + 8))
         if lost:
             msg = font.render("Caught! (Lose)", True, (255, 100, 100))
-            screen.blit(msg, (config.WINDOW_WIDTH // 2 - 80, config.WINDOW_HEIGHT // 2 - 20))
+            screen.blit(msg, (config.WINDOW_WIDTH // 2 - 100, config.WINDOW_HEIGHT // 2 - 40))
+            h2 = font_small.render("Press R to try again", True, config.COLOR_TEXT)
+            screen.blit(h2, (config.WINDOW_WIDTH // 2 - 100, config.WINDOW_HEIGHT // 2 + 8))
 
         pygame.display.flip()
 

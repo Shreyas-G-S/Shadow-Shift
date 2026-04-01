@@ -22,9 +22,13 @@ GRID_OFFSET_Y = (WINDOW_HEIGHT - GRID_HEIGHT) // 2
 # --- Predator perception (limited sensors per PEAS) ---
 PREDATOR_VISION_RANGE = 6       # tiles; beyond this, predator cannot see player
 PREDATOR_SHADOW_VISION_RANGE = 3  # tiles; in shadow, predator sees only this close
+# Local BFS pathfinding when player is visible (cap work → still "local" planning)
+PREDATOR_BFS_MAX_EXPANSIONS = 120
 
 # --- Game goal (Performance: survival time) ---
 SURVIVE_SECONDS = 60  # Win if player survives this long
+STEP_INTERVAL_MS = 180  # one simulation step every N ms
+AUTO_PLAYER = True  # True: autonomous player, False: keyboard-controlled player
 
 # --- Colors ---
 COLOR_BG = (10, 10, 20)
