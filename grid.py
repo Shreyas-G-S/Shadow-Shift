@@ -4,7 +4,11 @@ PEAS: Environment = grid-based maze with corridors, dynamic lighting, moving obs
        Actuators = switches to manipulate shadow zones.
 """
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import Tuple, List, Set
+=======
+from typing import Tuple, List
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 
 
 @dataclass
@@ -18,17 +22,26 @@ class Grid:
     tiles: List[List[int]]      # 1 = wall, 0 = floor
     shadows: List[List[int]]    # 1 = in shadow
     switches: List[Tuple[int, int]]
+<<<<<<< HEAD
     switches_pressed: Set[Tuple[int, int]]  # each switch tile hit at least once (exit win gate)
     shadow_rows: List[int]      # row indices that can be the active shadow corridor
     current_shadow_index: int
     exit_col: int
     exit_row: int
+=======
+    shadow_rows: List[int]      # row indices that can be the active shadow corridor
+    current_shadow_index: int
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 
     @classmethod
     def simple_maze(cls, cols: int, rows: int) -> "Grid":
         """
+<<<<<<< HEAD
         Build a simple maze with corridors, shadow rows (cycled by switches), switches,
         and an exit goal tile.
+=======
+        Build a simple maze with corridors, one active shadow corridor, and switches.
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
         """
         tiles = [[0 for _ in range(cols)] for _ in range(rows)]
         shadows = [[0 for _ in range(cols)] for _ in range(rows)]
@@ -48,6 +61,7 @@ class Grid:
             if x % 4 == 0:
                 tiles[(2 * rows) // 3][x] = 1
 
+<<<<<<< HEAD
         def row_has_corridor_floor(r: int) -> bool:
             return 0 <= r < rows and any(tiles[r][x] == 0 for x in range(3, cols - 3))
 
@@ -68,6 +82,12 @@ class Grid:
         if not shadow_rows:
             shadow_rows = [max(1, min(rows - 2, row_a))]
 
+=======
+        # Two possible shadow corridor rows (dynamic lighting)
+        row_a = rows // 2
+        row_b = max(1, min(rows - 2, row_a + 2))
+        shadow_rows = [row_a, row_b]
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
         current_shadow_index = 0
         active_row = shadow_rows[current_shadow_index]
         for x in range(3, cols - 3):
@@ -80,15 +100,19 @@ class Grid:
             (cols - 3, row_a),
         ]
 
+<<<<<<< HEAD
         forbidden: Set[Tuple[int, int]] = {(1, 1), *switches}
         exit_col, exit_row = cls._pick_exit_tile(cols, rows, tiles, forbidden)
 
+=======
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
         return cls(
             cols=cols,
             rows=rows,
             tiles=tiles,
             shadows=shadows,
             switches=switches,
+<<<<<<< HEAD
             switches_pressed=set(),
             shadow_rows=shadow_rows,
             current_shadow_index=current_shadow_index,
@@ -118,17 +142,30 @@ class Grid:
 
     def is_walkable(self, col: int, row: int) -> bool:
         if not self._in_bounds(col, row):
+=======
+            shadow_rows=shadow_rows,
+            current_shadow_index=current_shadow_index,
+        )
+
+    def is_walkable(self, col: int, row: int) -> bool:
+        if not (0 <= col < self.cols and 0 <= row < self.rows):
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
             return False
         return self.tiles[row][col] == 0
 
     def is_shadow(self, col: int, row: int) -> bool:
+<<<<<<< HEAD
         if not self._in_bounds(col, row):
+=======
+        if not (0 <= col < self.cols and 0 <= row < self.rows):
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
             return False
         return self.shadows[row][col] == 1
 
     def is_switch(self, col: int, row: int) -> bool:
         return (col, row) in self.switches
 
+<<<<<<< HEAD
     def is_exit(self, col: int, row: int) -> bool:
         return col == self.exit_col and row == self.exit_row
 
@@ -148,6 +185,8 @@ class Grid:
         self.switches_pressed.add((col, row))
         self.toggle_shadows()
 
+=======
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
     def toggle_shadows(self) -> None:
         """Cycle to the next shadow corridor row (actuator: switch)."""
         if not self.shadow_rows:

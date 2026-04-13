@@ -3,9 +3,12 @@ Shadow Shift – central configuration.
 Tune window, grid, colors, predator perception, and win condition here.
 """
 
+<<<<<<< HEAD
 # --- Grid movement (shared by agents) ---
 DIRS_4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
+=======
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 # --- Display ---
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
@@ -23,6 +26,7 @@ GRID_OFFSET_X = (WINDOW_WIDTH - GRID_WIDTH) // 2
 GRID_OFFSET_Y = (WINDOW_HEIGHT - GRID_HEIGHT) // 2
 
 # --- Predator perception (limited sensors per PEAS) ---
+<<<<<<< HEAD
 PREDATOR_VISION_RANGE = 6       # graph steps along walkable tiles (walls block LOS)
 PREDATOR_SHADOW_VISION_RANGE = 3  # in shadow, shorter LOS along same graph
 PREDATOR_LOS_MAX_NODES = 220      # cap flood-fill work for line-of-sight
@@ -32,6 +36,12 @@ PREDATOR_BFS_MAX_EXPANSIONS = 160
 PREDATOR_STALK_JITTER = 0.12
 # Forget last seen if player has moved this far from that cell (Manhattan)
 PREDATOR_MEMORY_DECAY_TILES = 14
+=======
+PREDATOR_VISION_RANGE = 6       # tiles; beyond this, predator cannot see player
+PREDATOR_SHADOW_VISION_RANGE = 3  # tiles; in shadow, predator sees only this close
+# Local BFS pathfinding when player is visible (cap work → still "local" planning)
+PREDATOR_BFS_MAX_EXPANSIONS = 120
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 
 # --- Game goal (Performance: survival time) ---
 SURVIVE_SECONDS = 60  # Win if player survives this long
@@ -47,7 +57,11 @@ COLOR_PLAYER = (80, 200, 255)
 COLOR_PREDATOR = (255, 80, 120)
 COLOR_NEUTRAL = (120, 255, 160)
 COLOR_GRID_LINES = (30, 30, 60)
+<<<<<<< HEAD
 COLOR_SWITCH = (255, 190, 60)  # switch not yet hit this run (stand out)
 COLOR_SWITCH_VISITED = (140, 120, 50)  # switch already pressed at least once
 COLOR_EXIT = (60, 220, 120)  # goal tile (distinct from floor / neutrals)
+=======
+COLOR_SWITCH = (230, 210, 80)
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 COLOR_TEXT = (220, 220, 240)

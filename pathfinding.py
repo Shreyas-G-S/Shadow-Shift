@@ -5,6 +5,7 @@ Used by predators only when the player is within vision (local planning).
 from collections import deque
 from typing import Dict, Optional, Set, Tuple
 
+<<<<<<< HEAD
 import config
 from grid import Grid
 
@@ -42,6 +43,11 @@ def bfs_walkable_depth_map(
     return dist
 
 
+=======
+from grid import Grid
+
+
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 def bfs_first_step_toward(
     start: Tuple[int, int],
     goal: Tuple[int, int],
@@ -60,11 +66,19 @@ def bfs_first_step_toward(
     q = deque([start])
     parent: Dict[Tuple[int, int], Tuple[int, int]] = {}
     expansions = 0
+<<<<<<< HEAD
+=======
+    dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
 
     while q and expansions < max_expansions:
         c, r = q.popleft()
         expansions += 1
+<<<<<<< HEAD
         for dc, dr in config.DIRS_4:
+=======
+        for dc, dr in dirs:
+>>>>>>> 58bbd3ee03c12ba2e1cea585802b4282f57f5c45
             nc, nr = c + dc, r + dr
             if not grid.is_walkable(nc, nr):
                 continue
