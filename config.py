@@ -8,7 +8,7 @@ DIRS_4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
 # --- Display ---
 WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_HEIGHT = 640
 FPS = 60
 
 # --- Grid (environment) ---
@@ -16,11 +16,13 @@ GRID_COLS = 20
 GRID_ROWS = 15
 TILE_SIZE = 32
 
-# Derived: center grid in window
+# Derived: center grid in window; reserve extra top margin so HUD lines do not overlap the maze
 GRID_WIDTH = GRID_COLS * TILE_SIZE
 GRID_HEIGHT = GRID_ROWS * TILE_SIZE
 GRID_OFFSET_X = (WINDOW_WIDTH - GRID_WIDTH) // 2
-GRID_OFFSET_Y = (WINDOW_HEIGHT - GRID_HEIGHT) // 2
+_H_CENTER = (WINDOW_HEIGHT - GRID_HEIGHT) // 2
+HUD_TOP_MIN = 96
+GRID_OFFSET_Y = max(_H_CENTER, HUD_TOP_MIN)
 
 # --- Predator perception (limited sensors per PEAS) ---
 PREDATOR_VISION_RANGE = 6       # graph steps along walkable tiles (walls block LOS)

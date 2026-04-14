@@ -195,35 +195,50 @@ def run() -> None:
         draw_player(screen, player)
         draw_agents(screen, agents)
 
-        # HUD: survival time (Performance metric)
+        # HUD: keep left column stacked; put big timer top-right (avoids overlap with y≈32 goal text)
         if not won and not lost:
             remain = max(0, config.SURVIVE_SECONDS - int(elapsed_sec))
             time_text = font.render(f"Survive: {remain}s", True, config.COLOR_TEXT)
         else:
             time_text = font.render(f"Time: {final_survival_sec:.1f}s", True, config.COLOR_TEXT)
-        hud_x = config.GRID_OFFSET_X
+        hud_x = max(8, config.GRID_OFFSET_X)
         sw_done = grid.switches_hit_count()
         sw_total = len(grid.switches)
         sw_line = font_small.render(
-            f"Switches: {sw_done}/{sw_total}  (visit each bright yellow tile once)",
+            f"Switches: {sw_done}/{sw_total} — visit each yellow switch once",
             True,
             config.COLOR_TEXT,
         )
-        goal_line = font_small.render(
-            f"Exit (green) counts only after all switches  |  Or survive {config.SURVIVE_SECONDS}s",
+        goal_a = font_small.render(
+            "Exit (green tile) only counts after all switches.",
             True,
             config.COLOR_TEXT,
         )
-        screen.blit(sw_line, (hud_x, 8))
-        screen.blit(goal_line, (hud_x, 32))
-        screen.blit(time_text, (hud_x, config.GRID_OFFSET_Y - 26))
+        goal_b = font_small.render(
+            f"Or survive {config.SURVIVE_SECONDS}s.",
+            True,
+            config.COLOR_TEXT,
+        )
+        hud_y = 8
+        screen.blit(sw_line, (hud_x, hud_y))
+        hud_y += sw_line.get_height() + 4
+        screen.blit(goal_a, (hud_x, hud_y))
+        hud_y += goal_a.get_height() + 2
+        screen.blit(goal_b, (hud_x, hud_y))
+
+        time_x = config.WINDOW_WIDTH - time_text.get_width() - 12
+        screen.blit(time_text, (time_x, 8))
 
         hint = font_small.render(
-            "R restart  Q quit" + ("" if config.AUTO_PLAYER else "  arrows/WASD move"),
+            "R restart  Q quit" + ("" if config.AUTO_PLAYER else "  ·  arrows/WASD move"),
             True,
             config.COLOR_TEXT,
         )
-        screen.blit(hint, (config.GRID_OFFSET_X, config.WINDOW_HEIGHT - 28))
+        hint_y = config.GRID_OFFSET_Y + config.GRID_HEIGHT + 8
+        if hint_y + hint.get_height() < config.WINDOW_HEIGHT:
+            screen.blit(hint, (hud_x, hint_y))
+        else:
+            screen.blit(hint, (hud_x, config.WINDOW_HEIGHT - hint.get_height() - 6))
 
         if won:
             if win_kind == "exit":
