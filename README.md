@@ -142,6 +142,4 @@ Rules are implemented in **`game_rules.evaluate_round`**.
 
 ---
 
-## License / course use
 
-This repository is built for an academic **multi-agent systems** style project. Adapt the text in **`shadow_shift.md`** and **`FinalProgressReport.md`** for your submission as required by your instructor.
